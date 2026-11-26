@@ -1,0 +1,274 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NR CAPTUREZ Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body{margin:0;background:#f5f1eb;color:#30251f;font-family:Arial}
+header{background:#401522;color:#e9d5a2;padding:22px}
+main{max-width:700px;margin:25px auto;padding:15px}
+section{background:white;padding:20px;margin:16px 0;border-radius:12px}
+input,select,button{width:100%;padding:13px;margin:8px 0;border:1px solid #ddd;border-radius:7px;font-size:16px;box-sizing:border-box}
+button{background:#401522;color:white;border:0;font-weight:bold}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<header>
+<h2>NR CAPTUREZ</h2>
+<p>Private Wedding Card Admin Panel</p>
+</header>
+<main>
+<section id="login">
+<h3>Admin Login</h3>
+<input id="email" type="email" placeholder="Admin Email">
+<input id="password" type="password" placeholder="Password">
+<button onclick="login()">Login</button>
+</section>
+<div id="panel" class="hidden">
+<section>
+<h3>Welcome Admin</h3>
+<button onclick="logout()">Logout</button>
+</section>
+<section>
+<h3>Available Designs</h3>
+<div id="designs">Loading...</div>
+</section>
+<section>
+<h3>Add New Customer</h3>
+<input id="customerName" placeholder="Customer Name">
+<input id="customerPhone" placeholder="Phone Number">
+<input id="customerEmail" type="email" placeholder="Email (optional)">
+<input id="customerNotes" placeholder="Notes (optional)">
+<button onclick="addCustomer()">Save Customer</button>
+</section>
+<section>
+<h3>Create Wedding Card</h3>
+<select id="customerSelect"><option value="">Select Customer</option></select>
+<input id="slug" placeholder="Unique card link name">
+<select id="designSelect"><option value="">Select Design</option></select>
+<button onclick="createCard()">Create Draft</button>
+</section>
+<section>
+<h3>Your Wedding Cards</h3>
+<div id="cards">Loading...</div>
+</section>
+<p id="message"></p>
+</div>
+</main>
+  
+<script>
+const SUPABASE_URL = "https://erzgumxrxcbkfvwagnpj.supabase.co";
+const SUPABASE_KEY = "sb_publishable_lxTmzwIrexM_Oew2q1iI1g_i4-RaHEr";
+
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
+
+function showMessage(message) {
+  document.getElementById("message").textContent = message;
+}
+
+async function login() {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+
+  const { data, error } = await db.auth.signInWithPassword({
+    email: email,
+    password: password
+  });
+
+  if (error) {
+    showMessage("Login error: " + error.message);
+    return;
+  }
+
+  currentUser = data.user;
+
+  const { data: admin, error: adminError } = await db
+    .from("admins")
+    .select("user_id")
+    .eq("user_id", currentUser.id)
+    .maybeSingle();
+
+  if (adminError || !admin) {
+    await db.auth.signOut();
+    showMessage("Access denied. Admin account only.");
+    return;
+  }
+
+  document.getElementById("login").classList.add("hidden");
+  document.getElementById("panel").classList.remove("hidden");
+
+  showMessage("Welcome to NR CAPTUREZ Admin Panel!");
+
+  await loadDesigns();
+  await loadCustomers();
+  await loadCards();
+}
+
+async function loadDesigns() {
+  const { data, error } = await db
+    .from("designs")
+    .select("id,name,active")
+    .eq("active", true)
+    .order("name");
+
+  if (error) {
+    showMessage(error.message);
+    return;
+  }
+
+  document.getElementById("designs").innerHTML =
+    data.map(item => "<p>" + item.name + "</p>").join("");
+
+  document.getElementById("designSelect").innerHTML =
+    '<option value="">Select Design</option>' +
+    data.map(item =>
+      '<option value="' + item.id + '">' + item.name + '</option>'
+    ).join("");
+}
+
+async function loadCustomers() {
+  const { data, error } = await db
+    .from("customers")
+    .select("id,name,phone")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    showMessage(error.message);
+    return;
+  }
+
+  document.getElementById("customerSelect").innerHTML =
+    '<option value="">Select Customer</option>' +
+    data.map(item =>
+      '<option value="' + item.id + '">' +
+      item.name + ' - ' + (item.phone || "") +
+      '</option>'
+    ).join("");
+}
+
+async function addCustomer() {
+  const name = document.getElementById("customerName").value.trim();
+
+  if (!name) {
+    showMessage("Please enter customer name.");
+    return;
+  }
+
+  const { error } = await db.from("customers").insert({
+    name: name,
+    phone: document.getElementById("customerPhone").value.trim() || null,
+    email: document.getElementById("customerEmail").value.trim() || null,
+    notes: document.getElementById("customerNotes").value.trim() || null
+  });
+
+  if (error) {
+    showMessage("Customer error: " + error.message);
+    return;
+  }
+
+  showMessage("Customer saved successfully.");
+
+  ["customerName", "customerPhone", "customerEmail", "customerNotes"]
+    .forEach(id => document.getElementById(id).value = "");
+
+  await loadCustomers();
+}
+
+async function createCard() {
+  const customer_id = document.getElementById("customerSelect").value;
+  const slug = document.getElementById("slug").value.trim().toLowerCase();
+  const design = document.getElementById("designSelect").value;
+
+  if (!customer_id || !slug || !design) {
+    showMessage("Select customer, design and enter card link name.");
+    return;
+  }
+
+  if (!/^[a-z0-9-]+$/.test(slug)) {
+    showMessage("Use lowercase English letters, numbers and hyphens only.");
+    return;
+  }
+
+  const { error } = await db.from("cards").insert({
+    customer_id: customer_id,
+    slug: slug,
+    design: design,
+    status: "draft",
+    locked: false,
+    data: {}
+  });
+
+  if (error) {
+    showMessage("Card error: " + error.message);
+    return;
+  }
+
+  showMessage("Wedding card draft created successfully.");
+
+  document.getElementById("slug").value = "";
+  await loadCards();
+}
+
+async function loadCards() {
+  const { data, error } = await db
+    .from("cards")
+    .select("id,slug,design,status,locked")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    showMessage("Cards error: " + error.message);
+    return;
+  }
+
+  document.getElementById("cards").innerHTML =
+    data.length
+      ? data.map(item =>
+          "<p><b>" + item.slug + "</b><br>" +
+          "Design: " + item.design + "<br>" +
+          "Status: " + item.status + "<br>" +
+          "Locked: " + item.locked + "</p>"
+        ).join("")
+      : "No cards created yet.";
+}
+
+async function logout() {
+  await db.auth.signOut();
+  location.reload();
+}
+
+db.auth.getSession().then(async ({ data }) => {
+  if (data.session) {
+    currentUser = data.session.user;
+    await loginWithExistingSession();
+  }
+});
+
+async function loginWithExistingSession() {
+  const { data: admin } = await db
+    .from("admins")
+    .select("user_id")
+    .eq("user_id", currentUser.id)
+    .maybeSingle();
+
+  if (!admin) {
+    await db.auth.signOut();
+    return;
+  }
+
+  document.getElementById("login").classList.add("hidden");
+  document.getElementById("panel").classList.remove("hidden");
+  showMessage("Welcome to NR CAPTUREZ Admin Panel!");
+
+  await loadDesigns();
+  await loadCustomers();
+  await loadCards();
+}
+</script>
+</body>
+</html>
