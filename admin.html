@@ -57,6 +57,33 @@ button{background:#401522;color:white;border:0;font-weight:bold}
 <div id="cards">Loading...</div>
 </section>
 <p id="message"></p>
+  
+<section>
+  <h3>Edit Wedding Card</h3>
+
+  <select id="editCardSelect">
+    <option value="">Select Wedding Card</option>
+  </select>
+
+  <input id="groomName" placeholder="Groom Name">
+  <input id="brideName" placeholder="Bride Name">
+  <input id="weddingDate" type="date">
+  <input id="weddingVenue" placeholder="Wedding Venue">
+  <input id="weddingTime" placeholder="Wedding Time">
+
+  <h4>Wedding Events</h4>
+  <input id="mehndi" placeholder="Mehndi Details">
+  <input id="haldi" placeholder="Haldi Details">
+  <input id="nikasi" placeholder="Nikasi Details">
+  <input id="reception" placeholder="Reception Details">
+
+  <input id="mapLink" placeholder="Google Maps Link">
+  <input id="whatsapp" placeholder="WhatsApp Number">
+
+  <button onclick="saveCardDetails()">Save Wedding Details</button>
+  <p id="editMessage"></p>
+</section>
+
 </div>
 </main>
   
@@ -108,6 +135,7 @@ async function login() {
   await loadDesigns();
   await loadCustomers();
   await loadCards();
+  await loadEditableCards();
 }
 
 async function loadDesigns() {
@@ -268,6 +296,98 @@ async function loginWithExistingSession() {
   await loadDesigns();
   await loadCustomers();
   await loadCards();
+  await loadEditableCards();
+}
+  
+async function loadEditableCards() {
+  const { data, error } = await db
+    .from("cards")
+    .select("id,slug")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    showMessage("Edit cards error: " + error.message);
+    return;
+  }
+
+  const select = document.getElementById("editCardSelect");
+
+  select.innerHTML =
+    '<option value="">Select Wedding Card</option>' +
+    data.map(card =>
+      '<option value="' + card.id + '">' + card.slug + '</option>'
+    ).join("");
+
+  select.onchange = loadSelectedCard;
+}
+
+async function loadSelectedCard() {
+  const id = document.getElementById("editCardSelect").value;
+
+  if (!id) return;
+
+  const { data: card, error } = await db
+    .from("cards")
+    .select("data")
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    showMessage("Load card error: " + error.message);
+    return;
+  }
+
+  const details = card.data || {};
+
+  document.getElementById("groomName").value = details.groomName || "";
+  document.getElementById("brideName").value = details.brideName || "";
+  document.getElementById("weddingDate").value = details.weddingDate || "";
+  document.getElementById("weddingVenue").value = details.weddingVenue || "";
+  document.getElementById("weddingTime").value = details.weddingTime || "";
+  document.getElementById("mehndi").value = details.mehndi || "";
+  document.getElementById("haldi").value = details.haldi || "";
+  document.getElementById("nikasi").value = details.nikasi || "";
+  document.getElementById("reception").value = details.reception || "";
+  document.getElementById("mapLink").value = details.mapLink || "";
+  document.getElementById("whatsapp").value = details.whatsapp || "";
+}
+
+async function saveCardDetails() {
+  const id = document.getElementById("editCardSelect").value;
+
+  if (!id) {
+    document.getElementById("editMessage").textContent =
+      "Please select a wedding card.";
+    return;
+  }
+
+  const details = {
+    groomName: document.getElementById("groomName").value.trim(),
+    brideName: document.getElementById("brideName").value.trim(),
+    weddingDate: document.getElementById("weddingDate").value,
+    weddingVenue: document.getElementById("weddingVenue").value.trim(),
+    weddingTime: document.getElementById("weddingTime").value.trim(),
+    mehndi: document.getElementById("mehndi").value.trim(),
+    haldi: document.getElementById("haldi").value.trim(),
+    nikasi: document.getElementById("nikasi").value.trim(),
+    reception: document.getElementById("reception").value.trim(),
+    mapLink: document.getElementById("mapLink").value.trim(),
+    whatsapp: document.getElementById("whatsapp").value.trim()
+  };
+
+  const { error } = await db
+    .from("cards")
+    .update({ data: details })
+    .eq("id", id);
+
+  if (error) {
+    document.getElementById("editMessage").textContent =
+      "Save error: " + error.message;
+    return;
+  }
+
+  document.getElementById("editMessage").textContent =
+    "Wedding details saved successfully!";
 }
 </script>
 </body>
