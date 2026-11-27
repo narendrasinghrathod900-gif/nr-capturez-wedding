@@ -415,6 +415,111 @@ async function saveCardDetails() {
 
   eventList.appendChild(row);
 }
+  function addEventRow(eventName = "", eventDetails = "") {
+  const eventList = document.getElementById("eventList");
+  const row = document.createElement("div");
+
+  const nameInput = document.createElement("input");
+  nameInput.type = "text";
+  nameInput.placeholder = "Event Name";
+  nameInput.value = eventName;
+
+  const detailsInput = document.createElement("input");
+  detailsInput.type = "text";
+  detailsInput.placeholder = "Event Details";
+  detailsInput.value = eventDetails;
+
+  const removeButton = document.createElement("button");
+  removeButton.type = "button";
+  removeButton.textContent = "Remove Event";
+  removeButton.onclick = () => row.remove();
+
+  row.append(nameInput, detailsInput, removeButton);
+  eventList.appendChild(row);
+}
+
+async function loadSelectedCard() {
+  const id = document.getElementById("editCardSelect").value;
+  if (!id) return;
+
+  const { data: card, error } = await db
+    .from("cards")
+    .select("data")
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    showMessage("Load card error: " + error.message);
+    return;
+  }
+
+  const details = card.data || {};
+
+  document.getElementById("groomName").value = details.groomName || "";
+  document.getElementById("brideName").value = details.brideName || "";
+  document.getElementById("weddingDate").value = details.weddingDate || "";
+  document.getElementById("weddingVenue").value = details.weddingVenue || "";
+  document.getElementById("weddingTime").value = details.weddingTime || "";
+  document.getElementById("mehndi").value = details.mehndi || "";
+  document.getElementById("haldi").value = details.haldi || "";
+  document.getElementById("nikasi").value = details.nikasi || "";
+  document.getElementById("reception").value = details.reception || "";
+  document.getElementById("mapLink").value = details.mapLink || "";
+  document.getElementById("whatsapp").value = details.whatsapp || "";
+
+  const eventList = document.getElementById("eventList");
+  eventList.innerHTML = "";
+
+  (details.events || []).forEach(event => {
+    addEventRow(event.name || "", event.details || "");
+  });
+}
+
+async function saveCardDetails() {
+  const id = document.getElementById("editCardSelect").value;
+
+  if (!id) {
+    document.getElementById("editMessage").textContent =
+      "Please select a wedding card.";
+    return;
+  }
+
+  const eventRows = document.querySelectorAll("#eventList > div");
+
+  const events = Array.from(eventRows).map(row => ({
+    name: row.querySelectorAll("input")[0].value.trim(),
+    details: row.querySelectorAll("input")[1].value.trim()
+  }));
+
+  const details = {
+    groomName: document.getElementById("groomName").value.trim(),
+    brideName: document.getElementById("brideName").value.trim(),
+    weddingDate: document.getElementById("weddingDate").value,
+    weddingVenue: document.getElementById("weddingVenue").value.trim(),
+    weddingTime: document.getElementById("weddingTime").value.trim(),
+    mehndi: document.getElementById("mehndi").value.trim(),
+    haldi: document.getElementById("haldi").value.trim(),
+    nikasi: document.getElementById("nikasi").value.trim(),
+    reception: document.getElementById("reception").value.trim(),
+    mapLink: document.getElementById("mapLink").value.trim(),
+    whatsapp: document.getElementById("whatsapp").value.trim(),
+    events: events
+  };
+
+  const { error } = await db
+    .from("cards")
+    .update({ data: details })
+    .eq("id", id);
+
+  if (error) {
+    document.getElementById("editMessage").textContent =
+      "Save error: " + error.message;
+    return;
+  }
+
+  document.getElementById("editMessage").textContent =
+    "Wedding details saved successfully!";
+}
 </script>
 </body>
 </html>
