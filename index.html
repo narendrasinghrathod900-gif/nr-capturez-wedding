@@ -186,7 +186,10 @@ textarea{min-height:84px;resize:vertical}
 /* ============================================================
    EDIT THIS BLOCK – everything on the site is driven from here
    ============================================================ */
-const CONFIG = {
+const SUPABASE_URL = "https://erzgumxrxcbkfvwagnpj.supabase.co";
+const SUPABASE_KEY = "यहाँ अपनी Publishable Key डालें";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const CONFIG = {
   bride: { name:"Aanya", full:"Aanya Sharma", parents:"Daughter of Mr. & Mrs. Rakesh Sharma", about:"A lover of poetry, chai and old Hindi songs, she lights up every room she walks into.", photo:"" },
   groom: { name:"Vihaan", full:"Vihaan Rathore", parents:"Son of Mr. & Mrs. Mahendra Rathore", about:"A dreamer with a quiet heart and a loud laugh, he has found his home in her.", photo:"" },
   tagline: "Together with their families",
