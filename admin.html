@@ -79,7 +79,18 @@ button{background:#401522;color:white;border:0;font-weight:bold}
 
   <input id="mapLink" placeholder="Google Maps Link">
   <input id="whatsapp" placeholder="WhatsApp Number">
+<h4>Bride & Groom Photos</h4>
 
+<label>Groom Photo</label>
+<input id="groomPhoto" type="file" accept="image/*">
+
+<label>Bride Photo</label>
+<input id="bridePhoto" type="file" accept="image/*">
+
+<h4>Wedding Events</h4>
+<div id="eventList"></div>
+
+<button type="button" onclick="addEventRow()">+ Add Wedding Event</button>
   <button onclick="saveCardDetails()">Save Wedding Details</button>
   <p id="editMessage"></p>
 </section>
