@@ -400,6 +400,21 @@ async function saveCardDetails() {
   document.getElementById("editMessage").textContent =
     "Wedding details saved successfully!";
 }
+  function addEventRow() {
+  const eventList = document.getElementById("eventList");
+
+  const row = document.createElement("div");
+
+  row.innerHTML = `
+    <input type="text" placeholder="Event Name">
+    <input type="text" placeholder="Event Details">
+    <button type="button" onclick="this.parentElement.remove()">
+      Remove Event
+    </button>
+  `;
+
+  eventList.appendChild(row);
+}
 </script>
 </body>
 </html>
