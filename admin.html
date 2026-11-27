@@ -520,6 +520,109 @@ async function saveCardDetails() {
   document.getElementById("editMessage").textContent =
     "Wedding details saved successfully!";
 }
+  
+async function saveCardDetails() {
+  const id = document.getElementById("editCardSelect").value;
+  const msg = document.getElementById("editMessage");
+
+  if (!id) {
+    msg.textContent = "Please select a wedding card.";
+    return;
+  }
+
+  msg.textContent = "Saving wedding details and photos...";
+
+  const { data: oldCard, error: fetchError } = await db
+    .from("cards")
+    .select("data")
+    .eq("id", id)
+    .single();
+
+  if (fetchError) {
+    msg.textContent = "Error loading card: " + fetchError.message;
+    return;
+  }
+
+  const groomFile = document.getElementById("groomPhoto").files[0];
+  const brideFile = document.getElementById("bridePhoto").files[0];
+
+  const photos = { ...(oldCard.data?.photos || {}) };
+
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+
+  async function uploadPhoto(file, person) {
+    if (!file) return photos[person];
+
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error("Please use JPG, PNG or WEBP photos.");
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      throw new Error("Each photo must be smaller than 5 MB.");
+    }
+
+    const extension = {
+      "image/jpeg": "jpg",
+      "image/png": "png",
+      "image/webp": "webp"
+    }[file.type];
+
+    const path = id + "/" + person + "-" +
+      Date.now() + "-" + Math.random().toString(36).slice(2) +
+      "." + extension;
+
+    const { error } = await db.storage
+      .from("card-photos")
+      .upload(path, file, {
+        contentType: file.type,
+        upsert: false
+      });
+
+    if (error) throw error;
+
+    return path;
+  }
+
+  try {
+    photos.groom = await uploadPhoto(groomFile, "groom");
+    photos.bride = await uploadPhoto(brideFile, "bride");
+
+    const eventRows = document.querySelectorAll("#eventList > div");
+
+    const events = Array.from(eventRows).map(row => ({
+      name: row.querySelectorAll("input")[0].value.trim(),
+      details: row.querySelectorAll("input")[1].value.trim()
+    }));
+
+    const details = {
+      groomName: document.getElementById("groomName").value.trim(),
+      brideName: document.getElementById("brideName").value.trim(),
+      weddingDate: document.getElementById("weddingDate").value,
+      weddingVenue: document.getElementById("weddingVenue").value.trim(),
+      weddingTime: document.getElementById("weddingTime").value.trim(),
+      mehndi: document.getElementById("mehndi").value.trim(),
+      haldi: document.getElementById("haldi").value.trim(),
+      nikasi: document.getElementById("nikasi").value.trim(),
+      reception: document.getElementById("reception").value.trim(),
+      mapLink: document.getElementById("mapLink").value.trim(),
+      whatsapp: document.getElementById("whatsapp").value.trim(),
+      events: events,
+      photos: photos
+    };
+
+    const { error } = await db
+      .from("cards")
+      .update({ data: details })
+      .eq("id", id);
+
+    if (error) throw error;
+
+    msg.textContent = "Wedding details and photo paths saved successfully!";
+  } catch (error) {
+    msg.textContent = "Save error: " + error.message;
+  }
+}
+
 </script>
 </body>
 </html>
