@@ -183,6 +183,7 @@ textarea{min-height:84px;resize:vertical}
 
 
 <script>
+  async function start(){
 /* ============================================================
    EDIT THIS BLOCK – everything on the site is driven from here
    ============================================================ */
@@ -297,6 +298,30 @@ function build(){
  $('#eN').textContent=b.name+' & '+g.name; $('#eD').textContent=fmtD(w,{day:'numeric',month:'long',year:'numeric'}).toUpperCase();
  $('#seal').textContent=b.name[0]+'&'+g.name[0];
 }
+    // Load wedding card data from Supabase
+const slug = new URLSearchParams(window.location.search).get('slug');
+
+if (slug) {
+  const { data: card, error } = await db.rpc('get_public_card', {
+    p_slug: slug
+  });
+
+  if (error) {
+    console.error('Card loading error:', error);
+  } else if (card && card.data) {
+    const d = card.data;
+
+    CONFIG.bride.full = d.brideName || CONFIG.bride.full;
+    CONFIG.bride.name = d.brideName || CONFIG.bride.name;
+    CONFIG.groom.full = d.groomName || CONFIG.groom.full;
+    CONFIG.groom.name = d.groomName || CONFIG.groom.name;
+
+    CONFIG.weddingDate = d.weddingDate || CONFIG.weddingDate;
+    CONFIG.weddingVenue = d.weddingVenue || CONFIG.weddingVenue;
+    CONFIG.weddingTime = d.weddingTime || CONFIG.weddingTime;
+    CONFIG.whatsappNumber = d.whatsapp || CONFIG.whatsappNumber;
+  }
+}
 build();
 
 /* countdown */
@@ -381,6 +406,8 @@ function openInv(){if(document.body.classList.contains('opened'))return;
  document.body.classList.add('opened');$('#intro').classList.add('opened');document.body.classList.add('hintshow');
  setTimeout(()=>{$('#intro').classList.add('done');document.body.classList.remove('lock','pre');document.body.classList.add('go');scrollTo(0,0)},2600)}
 $('#openBtn').onclick=openInv;$('#seal').onclick=openInv;
+}
+start();
 </script>
 </body>
 </html>
