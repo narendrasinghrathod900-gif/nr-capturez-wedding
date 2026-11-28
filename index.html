@@ -320,6 +320,28 @@ if (slug) {
     CONFIG.weddingVenue = d.weddingVenue || CONFIG.weddingVenue;
     CONFIG.weddingTime = d.weddingTime || CONFIG.weddingTime;
     CONFIG.whatsappNumber = d.whatsapp || CONFIG.whatsappNumber;
+
+CONFIG.events = (Array.isArray(d.events) ? d.events : []).map((item, index) => {
+  const eventDate = (d.weddingDate || CONFIG.weddingDate).slice(0, 10);
+
+  return {
+    id: 'customer-event-' + index,
+    icon: ['🌼', '🌿', '🐎', '🪔', '💍', '🥂'][index % 6],
+    title: item.name || 'Wedding Event',
+    hi: item.name || '',
+    start: eventDate + 'T18:00',
+    end: eventDate + 'T20:00',
+    venue: d.weddingVenue || '',
+    address: d.weddingVenue || '',
+    dress: '',
+    note: item.detail || '',
+    map: d.mapLink || '',
+    dark: index % 2 === 0
+  };
+});
+
+CONFIG.mainVenueMap = d.mapLink || d.weddingVenue || CONFIG.mainVenueMap;
+
   }
 }
 build();
