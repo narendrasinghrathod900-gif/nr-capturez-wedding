@@ -341,7 +341,26 @@ CONFIG.events = (Array.isArray(d.events) ? d.events : []).map((item, index) => {
 });
 
 CONFIG.mainVenueMap = d.mapLink || d.weddingVenue || CONFIG.mainVenueMap;
+// Load bride and groom photos
+if (d.photos?.groom) {
+  const { data: groomPhoto, error: groomError } =
+    await db.storage.from('card-photos')
+      .createSignedUrl(d.photos.groom, 3600);
 
+  if (!groomError && groomPhoto?.signedUrl) {
+    CONFIG.groom.photo = groomPhoto.signedUrl;
+  }
+}
+
+if (d.photos?.bride) {
+  const { data: bridePhoto, error: brideError } =
+    await db.storage.from('card-photos')
+      .createSignedUrl(d.photos.bride, 3600);
+
+  if (!brideError && bridePhoto?.signedUrl) {
+    CONFIG.bride.photo = bridePhoto.signedUrl;
+  }
+}
   }
 }
 build();
