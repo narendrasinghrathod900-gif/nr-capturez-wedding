@@ -92,6 +92,7 @@ button{background:#401522;color:white;border:0;font-weight:bold}
 
 <button type="button" onclick="addEventRow()">+ Add Wedding Event</button>
   <button onclick="saveCardDetails()">Save Wedding Details</button>
+<button type="button" onclick="publishSelectedCard()">Publish Wedding Card</button>
   <p id="editMessage"></p>
 </section>
 
@@ -591,7 +592,7 @@ async function saveCardDetails() {
 
     const events = Array.from(eventRows).map(row => ({
       name: row.querySelectorAll("input")[0].value.trim(),
-      details: row.querySelectorAll("input")[1].value.trim()
+      detail: row.querySelectorAll("input")[1].value.trim()
     }));
 
     const details = {
@@ -622,6 +623,33 @@ async function saveCardDetails() {
     msg.textContent = "Save error: " + error.message;
   }
 }
+
+async function publishSelectedCard() {
+  const id = document.getElementById("editCardSelect").value;
+  const msg = document.getElementById("editMessage");
+
+  if (!id) {
+    msg.textContent = "Please select a wedding card.";
+    return;
+  }
+
+  if (!confirm("Are you sure you want to publish this wedding card?")) {
+    return;
+  }
+
+  msg.textContent = "Publishing wedding card...";
+
+  const { error } = await db.rpc("publish_card", {
+    p_id: id
+  });
+
+  if (error) {
+    msg.textContent = "Publish error: " + error.message;
+    return;
+  }
+
+  msg.textContent = "Wedding card published successfully!";
+}  
 
 </script>
 </body>
