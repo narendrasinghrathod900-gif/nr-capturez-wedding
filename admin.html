@@ -92,7 +92,8 @@ button{background:#401522;color:white;border:0;font-weight:bold}
 
 <button type="button" onclick="addEventRow()">+ Add Wedding Event</button>
   <button onclick="saveCardDetails()">Save Wedding Details</button>
-<button type="button" onclick="publishSelectedCard()">Publish Wedding Card</button>
+<button type="button" onclick="unlockSelectedCard()">Unlock Wedding Card</button>
+  <button type="button" onclick="publishSelectedCard()">Publish Wedding Card</button>
   <p id="editMessage"></p>
 </section>
 
@@ -650,6 +651,32 @@ async function publishSelectedCard() {
 
   msg.textContent = "Wedding card published successfully!";
 }  
+  async function unlockSelectedCard() {
+  const id = document.getElementById("editCardSelect").value;
+  const msg = document.getElementById("editMessage");
+
+  if (!id) {
+    msg.textContent = "Please select a wedding card.";
+    return;
+  }
+
+  if (!confirm("Are you sure you want to unlock this wedding card?")) {
+    return;
+  }
+
+  msg.textContent = "Unlocking wedding card...";
+
+  const { error } = await db.rpc("unlock_card", {
+    p_id: id
+  });
+
+  if (error) {
+    msg.textContent = "Unlock error: " + error.message;
+    return;
+  }
+
+  msg.textContent = "Wedding card unlocked successfully!";
+}
 
 </script>
 </body>
